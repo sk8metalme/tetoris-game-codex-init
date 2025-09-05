@@ -27,6 +27,8 @@ class BoardPlaceNoClearTest {
 
     Board.PlaceResult r = board.placeAndClear(piece);
     assertEquals(LineClearType.NONE, r.lineClear());
+    // 盤面インスタンスは不変（cleared==0 分岐）
+    assertSame(board, r.board());
   }
 
   static class FakePiece implements Piece {

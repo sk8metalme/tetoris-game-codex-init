@@ -73,6 +73,50 @@ class GameControllerTest {
   }
 
   @Test
+  @DisplayName("POST input: If-Match（数値文字列, 非クオート）一致で200")
+  void input_ifmatch_unquoted_match() throws Exception {
+    // start
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = om.readTree(r.getResponse().getContentAsString()).get("id").asText();
+
+    String input = "{\"action\":\"SOFT_DROP\"}";
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("If-Match", "0") // 非クオート
+                .content(input))
+        .andExpect(status().isOk())
+        .andExpect(header().string("ETag", anyOf(is("1"), is("\"1\""))));
+  }
+
+  @Test
+  @DisplayName("POST input: If-Match（非クオート）不一致で409")
+  void input_ifmatch_unquoted_mismatch() throws Exception {
+    // start
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = om.readTree(r.getResponse().getContentAsString()).get("id").asText();
+
+    String input = "{\"action\":\"SOFT_DROP\"}";
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("If-Match", "999")
+                .content(input))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code", is("CONFLICT")));
+  }
+
+  @Test
   @DisplayName("POST /api/game/start: Idempotency-Keyを同一送信で同じIDを返す")
   void start_idempotent_same_key() throws Exception {
     String body = "{\"boardWidth\":10,\"boardHeight\":20}";
