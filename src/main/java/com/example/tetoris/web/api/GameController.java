@@ -137,7 +137,8 @@ public class GameController {
     int height = board.size();
     int width = height == 0 ? 0 : board.get(0).size();
     Map<Integer, String> types = Map.of(0, "EMPTY", 1, "LOCKED");
-    return new GameStateDto(rev, width, height, board, types, cp, false);
+    boolean gameOver = !s.board().canPlace(s.current());
+    return new GameStateDto(rev, width, height, board, types, cp, gameOver);
   }
 
   private static boolean matchesRev(String ifMatch, int rev) {
