@@ -3,7 +3,9 @@ package com.example.tetoris.application;
 import static org.junit.jupiter.api.Assertions.*;
 
 import com.example.tetoris.domain.model.GameState;
+import com.example.tetoris.domain.model.impl.RotatingPiece;
 import com.example.tetoris.domain.value.Position;
+import com.example.tetoris.domain.value.TetrominoType;
 import java.util.List;
 import java.util.Optional;
 import org.junit.jupiter.api.DisplayName;
@@ -112,6 +114,24 @@ class GameSessionServiceTest {
             .filter(Boolean::booleanValue)
             .count();
     assertEquals(4, locked);
+  }
+
+  @Test
+  @DisplayName("7-bag: 複数回のLOCKでO以外のミノがスポーンする")
+  void seven_bag_spawns_non_O_after_some_locks() {
+    GameSessionService svc = new GameSessionService();
+    String id = svc.startGame(Optional.of(10), Optional.of(20));
+    boolean seenNonO = false;
+    for (int i = 0; i < 8; i++) { // 7-bag以内に必ずO以外が出るはず
+      svc.apply(id, "HARD_DROP", 1);
+      GameSessionService.Session s = svc.apply(id, "LOCK", 1);
+      RotatingPiece p = (RotatingPiece) s.state().current();
+      if (p.type() != TetrominoType.O) {
+        seenNonO = true;
+        break;
+      }
+    }
+    assertTrue(seenNonO, "7-bag により O 以外がスポーンするはず");
   }
 
   @Test

@@ -21,6 +21,8 @@ public class GameSessionService {
   private final Map<String, Session> sessions = new ConcurrentHashMap<>();
   private final Map<String, String> startKeyToId = new ConcurrentHashMap<>();
   private final Map<String, Map<String, Session>> idempotencyBySession = new ConcurrentHashMap<>();
+  private final Map<String, com.example.tetoris.domain.random.TetrominoGenerator> gens =
+      new ConcurrentHashMap<>();
 
   public static class NotFoundException extends RuntimeException {
     public NotFoundException(String id) {
@@ -37,6 +39,8 @@ public class GameSessionService {
     GameState state = GameState.of(board, current);
     String id = UUID.randomUUID().toString();
     sessions.put(id, new Session(state, 0));
+    // 7-bag 生成器を初期化（MVP: シードはtimeベース）
+    gens.put(id, com.example.tetoris.domain.random.Generators.sevenBag(System.nanoTime()));
     return id;
   }
 
@@ -74,7 +78,7 @@ public class GameSessionService {
             case "HARD_DROP" -> st.hardDrop();
             case "ROTATE_CW" -> st.rotateCW();
             case "ROTATE_CCW" -> st.rotateCCW();
-            case "LOCK" -> lock(st);
+            case "LOCK" -> lock(id, st);
             default -> st; // 未対応は無変化
           };
     }
@@ -96,6 +100,7 @@ public class GameSessionService {
 
   public void delete(String id) {
     sessions.remove(id);
+    gens.remove(id);
   }
 
   private static Piece oBlockAt(int x, int y) {
@@ -107,11 +112,19 @@ public class GameSessionService {
         y);
   }
 
-  /** ピースを盤面にロックし、行消去後に新規ピースをスポーンする（MVP: O固定）。 */
-  private GameState lock(GameState st) {
+  /** ピースを盤面にロックし、行消去後に新規ピースをスポーンする（7-bag使用）。 */
+  private GameState lock(String id, GameState st) {
+    // ロック＆消去
     Board.PlaceResult res = st.board().placeAndClear(st.current());
-    int w = st.board().size().width();
-    Piece next = oBlockAt(w / 2, 0);
+    // 次ミノ種別を7-bagから取得（なければO）
+    com.example.tetoris.domain.random.TetrominoGenerator g = gens.get(id);
+    com.example.tetoris.domain.value.TetrominoType type =
+        g != null ? g.next() : com.example.tetoris.domain.value.TetrominoType.O;
+    var srs = new com.example.tetoris.domain.rules.srs.SrsRotationSystem();
+    var pos = srs.spawnPosition(st.board().size(), type);
+    Piece next =
+        new com.example.tetoris.domain.model.impl.RotatingPiece(
+            type, com.example.tetoris.domain.value.Rotation.R0, pos.x(), pos.y());
     return GameState.of(res.board(), next);
   }
 }
