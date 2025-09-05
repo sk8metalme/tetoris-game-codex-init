@@ -24,6 +24,8 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
   testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+  // Ensure JUnit Platform launcher present on test runtime (CI/Gradle 8+)
+  testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
 }
 
 test {
