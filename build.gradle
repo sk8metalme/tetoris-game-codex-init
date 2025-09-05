@@ -1,0 +1,77 @@
+plugins {
+  id 'java'
+  id 'jacoco'
+  id 'com.diffplug.spotless' version '6.25.0'
+  id 'org.springframework.boot' version '3.3.3'
+  id 'io.spring.dependency-management' version '1.1.5'
+}
+
+group = 'com.example'
+version = '0.0.1-SNAPSHOT'
+
+java {
+  toolchain {
+    languageVersion = JavaLanguageVersion.of(21)
+  }
+}
+
+repositories {
+  mavenCentral()
+}
+
+dependencies {
+  implementation 'org.springframework.boot:spring-boot-starter-web'
+  implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
+
+  testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+}
+
+test {
+  useJUnitPlatform()
+  finalizedBy jacocoTestReport
+}
+
+jacoco {
+  toolVersion = '0.8.12'
+}
+
+jacocoTestReport {
+  reports {
+    xml.required = true
+    html.required = true
+    csv.required = false
+  }
+}
+
+jacocoTestCoverageVerification {
+  violationRules {
+    rule {
+      limit {
+        counter = 'LINE'
+        value = 'COVEREDRATIO'
+        minimum = 0.95
+      }
+      limit {
+        counter = 'BRANCH'
+        value = 'COVEREDRATIO'
+        minimum = 0.95
+      }
+    }
+  }
+}
+
+check.dependsOn jacocoTestCoverageVerification
+
+spotless {
+  java {
+    googleJavaFormat('1.22.0')
+    target 'src/**/*.java'
+  }
+}
+
+tasks.register('lint') {
+  group = 'verification'
+  description = 'Run formatting/lint checks'
+  dependsOn 'spotlessCheck'
+}
+

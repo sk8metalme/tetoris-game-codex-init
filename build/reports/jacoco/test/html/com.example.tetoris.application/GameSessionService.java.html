@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>GameSessionService.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tetoris-game</a> &gt; <a href="index.source.html" class="el_package">com.example.tetoris.application</a> &gt; <span class="el_source">GameSessionService.java</span></div><h1>GameSessionService.java</h1><pre class="source lang-java linenums">package com.example.tetoris.application;
+
+import com.example.tetoris.domain.model.Board;
+import com.example.tetoris.domain.model.GameState;
+import com.example.tetoris.domain.model.Piece;
+import com.example.tetoris.domain.model.impl.GridBoard;
+import com.example.tetoris.domain.value.Position;
+import com.example.tetoris.domain.value.Size;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
+
+/**
+ * メモリ内ゲームセッション管理（MVP）。
+ * - 単純なOブロックをスポーンし、基本操作のみ適用。
+ */
+<span class="nc" id="L20">public class GameSessionService {</span>
+
+<span class="nc" id="L22">  public record Session(GameState state, int rev) {}</span>
+
+<span class="nc" id="L24">  private final Map&lt;String, Session&gt; sessions = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L25">  private final Map&lt;String, String&gt; startKeyToId = new ConcurrentHashMap&lt;&gt;();</span>
+<span class="nc" id="L26">  private final Map&lt;String, Map&lt;String, Session&gt;&gt; idempotencyBySession = new ConcurrentHashMap&lt;&gt;();</span>
+
+  public static class NotFoundException extends RuntimeException {
+    public NotFoundException(String id) {
+<span class="nc" id="L30">      super(&quot;game not found: &quot; + id);</span>
+<span class="nc" id="L31">    }</span>
+  }
+
+  public String startGame(Optional&lt;Integer&gt; widthOpt, Optional&lt;Integer&gt; heightOpt) {
+<span class="nc" id="L35">    int w = widthOpt.orElse(10);</span>
+<span class="nc" id="L36">    int h = heightOpt.orElse(20);</span>
+<span class="nc" id="L37">    Size size = Size.of(w, h);</span>
+<span class="nc" id="L38">    Board board = GridBoard.empty(size);</span>
+<span class="nc" id="L39">    Piece current = oBlockAt(w / 2, 0);</span>
+<span class="nc" id="L40">    GameState state = GameState.of(board, current);</span>
+<span class="nc" id="L41">    String id = UUID.randomUUID().toString();</span>
+<span class="nc" id="L42">    sessions.put(id, new Session(state, 0));</span>
+<span class="nc" id="L43">    return id;</span>
+  }
+
+  /** Idempotent start: 同一キーなら同一IDを返す。 */
+  public String startGameIdempotent(
+      Optional&lt;Integer&gt; widthOpt, Optional&lt;Integer&gt; heightOpt, Optional&lt;String&gt; idempotencyKey) {
+<span class="nc bnc" id="L49" title="All 2 branches missed.">    if (idempotencyKey.isPresent()) {</span>
+<span class="nc" id="L50">      String key = idempotencyKey.get();</span>
+<span class="nc" id="L51">      String existing = startKeyToId.get(key);</span>
+<span class="nc bnc" id="L52" title="All 2 branches missed.">      if (existing != null) {</span>
+<span class="nc" id="L53">        return existing;</span>
+      }
+<span class="nc" id="L55">      String id = startGame(widthOpt, heightOpt);</span>
+<span class="nc" id="L56">      startKeyToId.put(key, id);</span>
+<span class="nc" id="L57">      return id;</span>
+    }
+<span class="nc" id="L59">    return startGame(widthOpt, heightOpt);</span>
+  }
+
+  public Session get(String id) {
+<span class="nc" id="L63">    Session s = sessions.get(id);</span>
+<span class="nc bnc" id="L64" title="All 2 branches missed.">    if (s == null) throw new NotFoundException(id);</span>
+<span class="nc" id="L65">    return s;</span>
+  }
+
+  public Session apply(String id, String action, int repeat) {
+<span class="nc" id="L69">    Session s = get(id);</span>
+<span class="nc" id="L70">    GameState st = s.state();</span>
+<span class="nc bnc" id="L71" title="All 2 branches missed.">    for (int i = 0; i &lt; Math.max(1, repeat); i++) {</span>
+<span class="nc bnc" id="L72" title="All 7 branches missed.">      st = switch (action) {</span>
+<span class="nc" id="L73">        case &quot;MOVE_LEFT&quot; -&gt; st.moveLeft();</span>
+<span class="nc" id="L74">        case &quot;MOVE_RIGHT&quot; -&gt; st.moveRight();</span>
+<span class="nc" id="L75">        case &quot;SOFT_DROP&quot; -&gt; st.softDrop();</span>
+<span class="nc" id="L76">        case &quot;HARD_DROP&quot; -&gt; st.hardDrop();</span>
+<span class="nc" id="L77">        case &quot;ROTATE_CW&quot; -&gt; st.rotateCW();</span>
+<span class="nc" id="L78">        case &quot;ROTATE_CCW&quot; -&gt; st.rotateCCW();</span>
+<span class="nc" id="L79">        default -&gt; st; // 未対応は無変化</span>
+      };
+    }
+<span class="nc" id="L82">    Session updated = new Session(st, s.rev() + 1);</span>
+<span class="nc" id="L83">    sessions.put(id, updated);</span>
+<span class="nc" id="L84">    return updated;</span>
+  }
+
+  /** Idempotent apply: 同一キーなら同じ結果（rev/state）を返す。 */
+  public Session applyIdempotent(String id, String idempotencyKey, String action, int repeat) {
+<span class="nc" id="L89">    Map&lt;String, Session&gt; m = idempotencyBySession.computeIfAbsent(id, k -&gt; new ConcurrentHashMap&lt;&gt;());</span>
+<span class="nc" id="L90">    Session prev = m.get(idempotencyKey);</span>
+<span class="nc bnc" id="L91" title="All 2 branches missed.">    if (prev != null) return prev;</span>
+<span class="nc" id="L92">    Session res = apply(id, action, repeat);</span>
+<span class="nc" id="L93">    m.put(idempotencyKey, res);</span>
+<span class="nc" id="L94">    return res;</span>
+  }
+
+  public void delete(String id) {
+<span class="nc" id="L98">    sessions.remove(id);</span>
+<span class="nc" id="L99">  }</span>
+
+  private static Piece oBlockAt(int x, int y) {
+    // 2x2 O ミノの簡易実装（絶対座標）
+<span class="nc" id="L103">    return new Piece() {</span>
+      @Override
+      public List&lt;Position&gt; cells() {
+<span class="nc" id="L106">        List&lt;Position&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="nc" id="L107">        list.add(new Position(x, y));</span>
+<span class="nc" id="L108">        list.add(new Position(x + 1, y));</span>
+<span class="nc" id="L109">        list.add(new Position(x, y + 1));</span>
+<span class="nc" id="L110">        list.add(new Position(x + 1, y + 1));</span>
+<span class="nc" id="L111">        return list;</span>
+      }
+    };
+  }
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>

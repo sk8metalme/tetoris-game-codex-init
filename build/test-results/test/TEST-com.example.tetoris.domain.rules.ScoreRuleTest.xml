@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuite name="com.example.tetoris.domain.rules.ScoreRuleTest" tests="2" skipped="0" failures="0" errors="0" timestamp="2025-09-05T05:47:24.554Z" hostname="arigatatsuyanoMacBook-Air.local" time="0.01">
+  <properties/>
+  <testcase name="LineClearTypeごとの基本スコアを返す（NONE=0, SINGLE=100, DOUBLE=300, TRIPLE=500, TETRIS=800）" classname="com.example.tetoris.domain.rules.ScoreRuleTest" time="0.005"/>
+  <testcase name="コンボボーナスは50*combo を返す（0→0,1→50,2→100）" classname="com.example.tetoris.domain.rules.ScoreRuleTest" time="0.002"/>
+  <system-out><![CDATA[]]></system-out>
+  <system-err><![CDATA[]]></system-err>
+</testsuite>

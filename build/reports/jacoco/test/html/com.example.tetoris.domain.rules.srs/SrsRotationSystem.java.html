@@ -1,0 +1,97 @@
+<?xml version="1.0" encoding="UTF-8"?><!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"><html xmlns="http://www.w3.org/1999/xhtml" lang="ja"><head><meta http-equiv="Content-Type" content="text/html;charset=UTF-8"/><link rel="stylesheet" href="../jacoco-resources/report.css" type="text/css"/><link rel="shortcut icon" href="../jacoco-resources/report.gif" type="image/gif"/><title>SrsRotationSystem.java</title><link rel="stylesheet" href="../jacoco-resources/prettify.css" type="text/css"/><script type="text/javascript" src="../jacoco-resources/prettify.js"></script></head><body onload="window['PR_TAB_WIDTH']=4;prettyPrint()"><div class="breadcrumb" id="breadcrumb"><span class="info"><a href="../jacoco-sessions.html" class="el_session">Sessions</a></span><a href="../index.html" class="el_report">tetoris-game</a> &gt; <a href="index.source.html" class="el_package">com.example.tetoris.domain.rules.srs</a> &gt; <span class="el_source">SrsRotationSystem.java</span></div><h1>SrsRotationSystem.java</h1><pre class="source lang-java linenums">package com.example.tetoris.domain.rules.srs;
+
+import com.example.tetoris.domain.rules.RotationSystem;
+import com.example.tetoris.domain.value.Position;
+import com.example.tetoris.domain.value.Rotation;
+import com.example.tetoris.domain.value.Size;
+import com.example.tetoris.domain.value.TetrominoType;
+import java.util.ArrayList;
+import java.util.List;
+
+/** SRS（簡易版）: 最小限のkick表を実装。 */
+<span class="fc" id="L12">public class SrsRotationSystem implements RotationSystem {</span>
+  @Override
+  public Position spawnPosition(Size boardSize, TetrominoType type) {
+    // 4列幅を基準に中央寄せスポーン（簡易）。
+<span class="nc" id="L16">    int x = Math.max(0, boardSize.width() / 2 - 2);</span>
+<span class="nc" id="L17">    return new Position(x, 0);</span>
+  }
+
+  @Override
+  public List&lt;Position&gt; kicks(TetrominoType type, Rotation from, Rotation to) {
+    // 最低限、(0,0) を含む。
+<span class="fc" id="L23">    List&lt;Position&gt; list = new ArrayList&lt;&gt;();</span>
+<span class="fc" id="L24">    list.add(new Position(0, 0));</span>
+
+<span class="pc bpc" id="L26" title="1 of 2 branches missed.">    if (type == TetrominoType.O) {</span>
+<span class="nc" id="L27">      return List.copyOf(list);</span>
+    }
+
+<span class="pc bpc" id="L30" title="1 of 2 branches missed.">    boolean cw = to == rotateCW(from);</span>
+<span class="pc bpc" id="L31" title="1 of 2 branches missed.">    boolean ccw = to == rotateCCW(from);</span>
+
+<span class="pc bpc" id="L33" title="1 of 2 branches missed.">    if (type == TetrominoType.I) {</span>
+      // Iミノは専用kick表（簡易）。
+<span class="nc bnc" id="L35" title="All 2 branches missed.">      if (cw) {</span>
+<span class="nc bnc" id="L36" title="All 5 branches missed.">        switch (from) {</span>
+<span class="nc" id="L37">          case R0 -&gt; addAll(list, new int[][] {{-2, 0}, {1, 0}, {-2, -1}, {1, 2}});</span>
+<span class="nc" id="L38">          case R90 -&gt; addAll(list, new int[][] {{-1, 0}, {2, 0}, {-1, 2}, {2, -1}});</span>
+<span class="nc" id="L39">          case R180 -&gt; addAll(list, new int[][] {{1, 0}, {-2, 0}, {1, -2}, {-2, 1}});</span>
+<span class="nc" id="L40">          case R270 -&gt; addAll(list, new int[][] {{2, 0}, {-1, 0}, {2, -1}, {-1, 2}});</span>
+        }
+<span class="nc bnc" id="L42" title="All 2 branches missed.">      } else if (ccw) {</span>
+<span class="nc bnc" id="L43" title="All 5 branches missed.">        switch (from) {</span>
+<span class="nc" id="L44">          case R0 -&gt; addAll(list, new int[][] {{-1, 0}, {2, 0}, {-1, 2}, {2, -1}});</span>
+<span class="nc" id="L45">          case R90 -&gt; addAll(list, new int[][] {{2, 0}, {-1, 0}, {2, -1}, {-1, 2}});</span>
+<span class="nc" id="L46">          case R180 -&gt; addAll(list, new int[][] {{1, 0}, {-2, 0}, {1, -2}, {-2, 1}});</span>
+<span class="nc" id="L47">          case R270 -&gt; addAll(list, new int[][] {{-2, 0}, {1, 0}, {-2, -1}, {1, 2}});</span>
+        }
+      }
+<span class="nc" id="L50">      return List.copyOf(list);</span>
+    }
+
+    // JLTSZ 共通kick（簡易）。
+<span class="pc bpc" id="L54" title="1 of 2 branches missed.">    if (cw) {</span>
+<span class="pc bpc" id="L55" title="4 of 5 branches missed.">      switch (from) {</span>
+<span class="fc" id="L56">        case R0 -&gt; addAll(list, new int[][] {{-1, 0}, {-1, 1}, {0, -2}, {-1, -2}});</span>
+<span class="nc" id="L57">        case R90 -&gt; addAll(list, new int[][] {{1, 0}, {1, -1}, {0, 2}, {1, 2}});</span>
+<span class="nc" id="L58">        case R180 -&gt; addAll(list, new int[][] {{1, 0}, {1, 1}, {0, -2}, {1, -2}});</span>
+<span class="pc" id="L59">        case R270 -&gt; addAll(list, new int[][] {{-1, 0}, {-1, -1}, {0, 2}, {-1, 2}});</span>
+      }
+<span class="nc bnc" id="L61" title="All 2 branches missed.">    } else if (ccw) {</span>
+<span class="nc bnc" id="L62" title="All 5 branches missed.">      switch (from) {</span>
+<span class="nc" id="L63">        case R0 -&gt; addAll(list, new int[][] {{1, 0}, {1, 1}, {0, -2}, {1, -2}});</span>
+<span class="nc" id="L64">        case R90 -&gt; addAll(list, new int[][] {{-1, 0}, {-1, 1}, {0, -2}, {-1, -2}});</span>
+<span class="nc" id="L65">        case R180 -&gt; addAll(list, new int[][] {{-1, 0}, {-1, -1}, {0, 2}, {-1, 2}});</span>
+<span class="nc" id="L66">        case R270 -&gt; addAll(list, new int[][] {{1, 0}, {1, -1}, {0, 2}, {1, 2}});</span>
+      }
+    }
+
+<span class="fc" id="L70">    return List.copyOf(list);</span>
+  }
+
+  private static Rotation rotateCW(Rotation r) {
+<span class="pc bpc" id="L74" title="3 of 4 branches missed.">    return switch (r) {</span>
+<span class="fc" id="L75">      case R0 -&gt; Rotation.R90;</span>
+<span class="nc" id="L76">      case R90 -&gt; Rotation.R180;</span>
+<span class="nc" id="L77">      case R180 -&gt; Rotation.R270;</span>
+<span class="nc" id="L78">      case R270 -&gt; Rotation.R0;</span>
+    };
+  }
+
+  private static Rotation rotateCCW(Rotation r) {
+<span class="pc bpc" id="L83" title="3 of 4 branches missed.">    return switch (r) {</span>
+<span class="fc" id="L84">      case R0 -&gt; Rotation.R270;</span>
+<span class="nc" id="L85">      case R90 -&gt; Rotation.R0;</span>
+<span class="nc" id="L86">      case R180 -&gt; Rotation.R90;</span>
+<span class="nc" id="L87">      case R270 -&gt; Rotation.R180;</span>
+    };
+  }
+
+  private static void addAll(List&lt;Position&gt; list, int[][] deltas) {
+<span class="fc bfc" id="L92" title="All 2 branches covered.">    for (int[] d : deltas) {</span>
+<span class="fc" id="L93">      list.add(new Position(d[0], d[1]));</span>
+    }
+<span class="fc" id="L95">  }</span>
+}
+</pre><div class="footer"><span class="right">Created with <a href="http://www.jacoco.org/jacoco">JaCoCo</a> 0.8.12.202403310830</span></div></body></html>
