@@ -24,7 +24,8 @@ class GameStateBoundaryTest {
     GameState s = GameState.of(board, piece);
 
     GameState moved = s.moveLeft();
-    assertEquals(setOf(new Position(0, 0), new Position(1, 0), new Position(0, 1), new Position(1, 1)),
+    assertEquals(
+        setOf(new Position(0, 0), new Position(1, 0), new Position(0, 1), new Position(1, 1)),
         new HashSet<>(moved.current().cells()));
   }
 
@@ -38,7 +39,8 @@ class GameStateBoundaryTest {
     GameState s = GameState.of(board, piece);
 
     GameState moved = s.moveRight();
-    assertEquals(setOf(new Position(2, 0), new Position(3, 0), new Position(2, 1), new Position(3, 1)),
+    assertEquals(
+        setOf(new Position(2, 0), new Position(3, 0), new Position(2, 1), new Position(3, 1)),
         new HashSet<>(moved.current().cells()));
   }
 
@@ -54,7 +56,8 @@ class GameStateBoundaryTest {
     GameState s = GameState.of(board, piece);
 
     GameState moved = s.softDrop();
-    assertEquals(setOf(new Position(2, 0), new Position(3, 0), new Position(2, 1), new Position(3, 1)),
+    assertEquals(
+        setOf(new Position(2, 0), new Position(3, 0), new Position(2, 1), new Position(3, 1)),
         new HashSet<>(moved.current().cells()));
   }
 
@@ -95,4 +98,3 @@ class GameStateBoundaryTest {
     return s;
   }
 }
-
