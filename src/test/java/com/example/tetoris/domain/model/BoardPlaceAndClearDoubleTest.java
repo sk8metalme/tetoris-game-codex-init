@@ -23,8 +23,10 @@ class BoardPlaceAndClearDoubleTest {
     Board board = GridBoard.fromBooleans(size, g);
 
     // 行y=2とy=3の不足セル(9,*)を埋める + 影響のない別行に2セル
-    Piece piece = new FakePiece(List.of(
-        new Position(9, 2), new Position(9, 3), new Position(0, 0), new Position(0, 1)));
+    Piece piece =
+        new FakePiece(
+            List.of(
+                new Position(9, 2), new Position(9, 3), new Position(0, 0), new Position(0, 1)));
 
     Board.PlaceResult r = board.placeAndClear(piece);
     assertEquals(LineClearType.DOUBLE, r.lineClear());
@@ -32,7 +34,14 @@ class BoardPlaceAndClearDoubleTest {
 
   static class FakePiece implements Piece {
     private final List<Position> cells;
-    FakePiece(List<Position> cells) { this.cells = cells; }
-    @Override public List<Position> cells() { return cells; }
+
+    FakePiece(List<Position> cells) {
+      this.cells = cells;
+    }
+
+    @Override
+    public List<Position> cells() {
+      return cells;
+    }
   }
 }

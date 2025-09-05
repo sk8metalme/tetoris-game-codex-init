@@ -13,10 +13,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
-/**
- * メモリ内ゲームセッション管理（MVP）。
- * - 単純なOブロックをスポーンし、基本操作のみ適用。
- */
+/** メモリ内ゲームセッション管理（MVP）。 - 単純なOブロックをスポーンし、基本操作のみ適用。 */
 public class GameSessionService {
 
   public record Session(GameState state, int rev) {}
@@ -69,15 +66,16 @@ public class GameSessionService {
     Session s = get(id);
     GameState st = s.state();
     for (int i = 0; i < Math.max(1, repeat); i++) {
-      st = switch (action) {
-        case "MOVE_LEFT" -> st.moveLeft();
-        case "MOVE_RIGHT" -> st.moveRight();
-        case "SOFT_DROP" -> st.softDrop();
-        case "HARD_DROP" -> st.hardDrop();
-        case "ROTATE_CW" -> st.rotateCW();
-        case "ROTATE_CCW" -> st.rotateCCW();
-        default -> st; // 未対応は無変化
-      };
+      st =
+          switch (action) {
+            case "MOVE_LEFT" -> st.moveLeft();
+            case "MOVE_RIGHT" -> st.moveRight();
+            case "SOFT_DROP" -> st.softDrop();
+            case "HARD_DROP" -> st.hardDrop();
+            case "ROTATE_CW" -> st.rotateCW();
+            case "ROTATE_CCW" -> st.rotateCCW();
+            default -> st; // 未対応は無変化
+          };
     }
     Session updated = new Session(st, s.rev() + 1);
     sessions.put(id, updated);
@@ -86,7 +84,8 @@ public class GameSessionService {
 
   /** Idempotent apply: 同一キーなら同じ結果（rev/state）を返す。 */
   public Session applyIdempotent(String id, String idempotencyKey, String action, int repeat) {
-    Map<String, Session> m = idempotencyBySession.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
+    Map<String, Session> m =
+        idempotencyBySession.computeIfAbsent(id, k -> new ConcurrentHashMap<>());
     Session prev = m.get(idempotencyKey);
     if (prev != null) return prev;
     Session res = apply(id, action, repeat);

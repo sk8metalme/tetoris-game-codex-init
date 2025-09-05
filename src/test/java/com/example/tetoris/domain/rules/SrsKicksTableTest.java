@@ -57,4 +57,3 @@ class SrsKicksTableTest {
     assertEquals(new Position(-1, 2), k.get(4));
   }
 }
-

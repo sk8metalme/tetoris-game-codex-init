@@ -46,4 +46,3 @@ class GameStateRotateTest {
     return new HashSet<>(cells);
   }
 }
-
