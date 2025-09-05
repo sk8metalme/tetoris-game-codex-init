@@ -82,38 +82,67 @@ jobs:
         if: always()
         shell: bash
         run: |
-          XML=build/reports/jacoco/test/jacocoTestReport.xml
-          if [[ -f "$XML" ]]; then
-            line_missed=$(grep -o "counter type=\"LINE\"[^>]*" "$XML" | sed -E 's/.*missed=\"([0-9]+)\".*/\1/')
-            line_covered=$(grep -o "counter type=\"LINE\"[^>]*" "$XML" | sed -E 's/.*covered=\"([0-9]+)\".*/\1/')
-            branch_missed=$(grep -o "counter type=\"BRANCH\"[^>]*" "$XML" | sed -E 's/.*missed=\"([0-9]+)\".*/\1/')
-            branch_covered=$(grep -o "counter type=\"BRANCH\"[^>]*" "$XML" | sed -E 's/.*covered=\"([0-9]+)\".*/\1/')
-            line_total=$((line_missed + line_covered))
-            branch_total=$((branch_missed + branch_covered))
-            line_pct=$(python3 - <<PY
+          python3 - <<'PY'
+import os
+import xml.etree.ElementTree as ET
 from decimal import Decimal, ROUND_HALF_UP
-missed=int('$line_missed'); covered=int('$line_covered')
-total=missed+covered
-print(str((Decimal(covered)/Decimal(total)*100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)))
-PY
+
+xml_path = 'build/reports/jacoco/test/jacocoTestReport.xml'
+gss = os.environ.get('GITHUB_STEP_SUMMARY')
+go = os.environ.get('GITHUB_OUTPUT')
+
+def write_summary(msg: str):
+    if gss:
+        with open(gss, 'a', encoding='utf-8') as f:
+            f.write(msg)
+
+def write_output(lines_pct: str, branches_pct: str):
+    if go:
+        with open(go, 'a', encoding='utf-8') as f:
+            f.write(f"LINES={lines_pct}\nBRANCHES={branches_pct}\n")
+
+if not os.path.exists(xml_path):
+    write_summary(f"JaCoCo XML not found at {xml_path}\n")
+    raise SystemExit(0)
+
+root = ET.parse(xml_path).getroot()
+
+def sum_counters(tp: str):
+    missed = covered = 0
+    # Prefer summing per-class counters to avoid duplicates
+    for cls in root.findall('.//class'):
+        for cnt in cls.findall('counter'):
+            if cnt.get('type') == tp:
+                missed += int(cnt.get('missed', '0'))
+                covered += int(cnt.get('covered', '0'))
+    # Fallback to any counters if class-level not present
+    if missed == 0 and covered == 0:
+        for cnt in root.findall(f".//counter[@type='{tp}']"):
+            missed += int(cnt.get('missed', '0'))
+            covered += int(cnt.get('covered', '0'))
+    return missed, covered
+
+lm, lc = sum_counters('LINE')
+bm, bc = sum_counters('BRANCH')
+
+def pct(cov: int, mis: int) -> str:
+    total = cov + mis
+    if total == 0:
+        return '0.0'
+    return str((Decimal(cov) / Decimal(total) * 100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP))
+
+line_pct = pct(lc, lm)
+branch_pct = pct(bc, bm)
+
+summary = (
+    "### Test Coverage Summary\n"
+    f"- Lines: {line_pct}% ({lc}/{lc+lm} covered)\n"
+    f"- Branches: {branch_pct}% ({bc}/{bc+bm} covered)\n"
 )
-            branch_pct=$(python3 - <<PY
-from decimal import Decimal, ROUND_HALF_UP
-missed=int('$branch_missed'); covered=int('$branch_covered')
-total=missed+covered
-print(str((Decimal(covered)/Decimal(total)*100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)))
+write_summary(summary)
+write_output(line_pct, branch_pct)
+print(summary)
 PY
-)
-            {
-              echo "### Test Coverage Summary"
-              echo
-              echo "- Lines: ${line_pct}% (${line_covered}/${line_total} covered)"
-              echo "- Branches: ${branch_pct}% (${branch_covered}/${branch_total} covered)"
-            } >> "$GITHUB_STEP_SUMMARY"
-            printf "LINES=%s\nBRANCHES=%s\n" "$line_pct" "$branch_pct" >> $GITHUB_OUTPUT
-          else
-            echo "JaCoCo XML not found at $XML" >> "$GITHUB_STEP_SUMMARY"
-          fi
 
       - name: Comment Coverage on PR
         if: github.event_name == 'pull_request'
