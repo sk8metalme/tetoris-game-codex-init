@@ -89,6 +89,17 @@ class GameSessionServiceTest {
   }
 
   @Test
+  @DisplayName("apply: repeatが負でも1回として扱われる（Math.max分岐）")
+  void apply_negative_repeat_treated_as_one() {
+    GameSessionService svc = new GameSessionService();
+    String id = svc.startGame(Optional.empty(), Optional.empty());
+    GameSessionService.Session before = svc.get(id);
+    GameSessionService.Session after = svc.apply(id, "SOFT_DROP", -10);
+    // rev は +1 のはず（1回のみ適用）
+    assertEquals(before.rev() + 1, after.rev());
+  }
+
+  @Test
   @DisplayName("get: 不正IDはNotFoundException")
   void get_notFound() {
     GameSessionService svc = new GameSessionService();

@@ -28,4 +28,12 @@ class ScoreRuleTest {
     assertEquals(100, rule.comboBonus(2));
     assertEquals(150, rule.comboBonus(3));
   }
+
+  @Test
+  @DisplayName("コンボボーナス: 負の値は0（ガード分岐）")
+  void comboBonus_negative_returns_zero() {
+    ScoreRule rule = new BasicScoreRule();
+    assertEquals(0, rule.comboBonus(-1));
+    assertEquals(0, rule.comboBonus(-100));
+  }
 }
