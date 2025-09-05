@@ -77,7 +77,8 @@ jobs:
           # check includes jacocoTestCoverageVerification (95% thresholds)
           gradle --no-daemon -q check
 
-      - name: Coverage Summary (Job Summary)
+      - id: coverage-summary
+        name: Coverage Summary (Job Summary)
         if: always()
         shell: bash
         run: |
