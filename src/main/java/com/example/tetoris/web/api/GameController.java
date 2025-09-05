@@ -33,9 +33,11 @@ public class GameController {
       @RequestHeader(value = "Idempotency-Key", required = false) String idemKey,
       @RequestBody(required = false) StartGameRequest req) {
     String id =
-        service.startGameIdempotent(
+        service.startGameIdempotentWithOptions(
             Optional.ofNullable(req).map(StartGameRequest::boardWidth),
             Optional.ofNullable(req).map(StartGameRequest::boardHeight),
+            Optional.ofNullable(req).map(StartGameRequest::seed),
+            Optional.ofNullable(req).map(StartGameRequest::difficulty),
             Optional.ofNullable(idemKey));
     var session = service.get(id);
     return ResponseEntity.status(HttpStatus.CREATED)

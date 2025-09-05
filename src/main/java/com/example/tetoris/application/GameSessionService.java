@@ -44,6 +44,24 @@ public class GameSessionService {
     return id;
   }
 
+  /** オプション付き開始（幅・高さ・seed・difficulty）。difficulty=O_ONLY で定数Oミノ。 */
+  public String startGameWithOptions(
+      Optional<Integer> widthOpt,
+      Optional<Integer> heightOpt,
+      Optional<Long> seedOpt,
+      Optional<String> difficultyOpt) {
+    String id = startGame(widthOpt, heightOpt);
+    // Generator を上書き
+    var diff = difficultyOpt.map(String::toUpperCase).orElse("");
+    if ("O_ONLY".equals(diff)) {
+      gens.put(id, new com.example.tetoris.domain.random.impl.ConstantGenerator(
+          com.example.tetoris.domain.value.TetrominoType.O));
+    } else if (seedOpt.isPresent()) {
+      gens.put(id, new com.example.tetoris.domain.random.impl.SevenBagGenerator(seedOpt.get()));
+    }
+    return id;
+  }
+
   /** Idempotent start: 同一キーなら同一IDを返す。 */
   public String startGameIdempotent(
       Optional<Integer> widthOpt, Optional<Integer> heightOpt, Optional<String> idempotencyKey) {
@@ -58,6 +76,23 @@ public class GameSessionService {
       return id;
     }
     return startGame(widthOpt, heightOpt);
+  }
+
+  public String startGameIdempotentWithOptions(
+      Optional<Integer> widthOpt,
+      Optional<Integer> heightOpt,
+      Optional<Long> seedOpt,
+      Optional<String> difficultyOpt,
+      Optional<String> idempotencyKey) {
+    if (idempotencyKey.isPresent()) {
+      String key = idempotencyKey.get();
+      String existing = startKeyToId.get(key);
+      if (existing != null) return existing;
+      String id = startGameWithOptions(widthOpt, heightOpt, seedOpt, difficultyOpt);
+      startKeyToId.put(key, id);
+      return id;
+    }
+    return startGameWithOptions(widthOpt, heightOpt, seedOpt, difficultyOpt);
   }
 
   public Session get(String id) {

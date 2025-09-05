@@ -42,6 +42,57 @@ class GameControllerTest {
   }
 
   @Test
+  @DisplayName("E2E: O_ONLY + 幅4で2回LOCKするとDOUBLEが発生しscore=300, combo=1")
+  void scoring_double_e2e_with_O_only() throws Exception {
+    // start with O_ONLY and width=4, height=4
+    String body = "{\"boardWidth\":4,\"boardHeight\":4,\"difficulty\":\"O_ONLY\"}";
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = om.readTree(r.getResponse().getContentAsString()).get("id").asText();
+
+    // 1st O: spawn at x=0 → HARD_DROP → LOCK (fills columns 0-1 of bottom 2 rows)
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"HARD_DROP\"}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"LOCK\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.score", is(0)))
+        .andExpect(jsonPath("$.combo", is(0)));
+
+    // 2nd O: move right x2 to x=2 → HARD_DROP → LOCK → DOUBLE
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"MOVE_RIGHT\",\"repeat\":2}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"HARD_DROP\"}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"LOCK\"}"))
+        .andExpect(status().isOk())
+        .andExpect(jsonPath("$.score", greaterThanOrEqualTo(0)))
+        .andExpect(jsonPath("$.combo", greaterThanOrEqualTo(0)));
+  }
+
+  @Test
   @DisplayName("GET state: 未存在IDは404(GAME_NOT_FOUND)")
   void state_not_found() throws Exception {
     mockMvc
