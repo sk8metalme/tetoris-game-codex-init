@@ -77,6 +77,53 @@ jobs:
           # check includes jacocoTestCoverageVerification (95% thresholds)
           gradle --no-daemon -q check
 
+      - name: Coverage Summary (Job Summary)
+        if: always()
+        shell: bash
+        run: |
+          XML=build/reports/jacoco/test/jacocoTestReport.xml
+          if [[ -f "$XML" ]]; then
+            line_missed=$(grep -o "counter type=\"LINE\"[^>]*" "$XML" | sed -E 's/.*missed=\"([0-9]+)\".*/\1/')
+            line_covered=$(grep -o "counter type=\"LINE\"[^>]*" "$XML" | sed -E 's/.*covered=\"([0-9]+)\".*/\1/')
+            branch_missed=$(grep -o "counter type=\"BRANCH\"[^>]*" "$XML" | sed -E 's/.*missed=\"([0-9]+)\".*/\1/')
+            branch_covered=$(grep -o "counter type=\"BRANCH\"[^>]*" "$XML" | sed -E 's/.*covered=\"([0-9]+)\".*/\1/')
+            line_total=$((line_missed + line_covered))
+            branch_total=$((branch_missed + branch_covered))
+            line_pct=$(python3 - <<PY
+from decimal import Decimal, ROUND_HALF_UP
+missed=int('$line_missed'); covered=int('$line_covered')
+total=missed+covered
+print(str((Decimal(covered)/Decimal(total)*100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)))
+PY
+)
+            branch_pct=$(python3 - <<PY
+from decimal import Decimal, ROUND_HALF_UP
+missed=int('$branch_missed'); covered=int('$branch_covered')
+total=missed+covered
+print(str((Decimal(covered)/Decimal(total)*100).quantize(Decimal('0.1'), rounding=ROUND_HALF_UP)))
+PY
+)
+            {
+              echo "### Test Coverage Summary"
+              echo
+              echo "- Lines: ${line_pct}% (${line_covered}/${line_total} covered)"
+              echo "- Branches: ${branch_pct}% (${branch_covered}/${branch_total} covered)"
+            } >> "$GITHUB_STEP_SUMMARY"
+            printf "LINES=%s\nBRANCHES=%s\n" "$line_pct" "$branch_pct" >> $GITHUB_OUTPUT
+          else
+            echo "JaCoCo XML not found at $XML" >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Comment Coverage on PR
+        if: github.event_name == 'pull_request'
+        uses: marocchino/sticky-pull-request-comment@v2
+        with:
+          header: coverage-summary
+          message: |
+            ### Test Coverage Summary
+            Lines: ${{ steps.coverage-summary.outputs.LINES }}%
+            Branches: ${{ steps.coverage-summary.outputs.BRANCHES }}%
+
       - name: Upload Test Report
         if: always()
         uses: actions/upload-artifact@v4
