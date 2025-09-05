@@ -27,8 +27,10 @@ class BoardPlaceNoClearTest {
 
     Board.PlaceResult r = board.placeAndClear(piece);
     assertEquals(LineClearType.NONE, r.lineClear());
-    // 盤面インスタンスは不変（cleared==0 分岐）
-    assertSame(board, r.board());
+    // 行消去が無くても配置は反映される
+    long occupied =
+        r.board().occupancy().stream().flatMap(List::stream).filter(Boolean::booleanValue).count();
+    assertEquals(4, occupied);
   }
 
   static class FakePiece implements Piece {

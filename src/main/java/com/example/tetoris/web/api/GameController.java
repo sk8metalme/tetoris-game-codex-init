@@ -33,14 +33,25 @@ public class GameController {
       @RequestHeader(value = "Idempotency-Key", required = false) String idemKey,
       @RequestBody(required = false) StartGameRequest req) {
     String id =
-        service.startGameIdempotent(
+        service.startGameIdempotentWithOptions(
             Optional.ofNullable(req).map(StartGameRequest::boardWidth),
             Optional.ofNullable(req).map(StartGameRequest::boardHeight),
+            Optional.ofNullable(req).map(StartGameRequest::seed),
+            Optional.ofNullable(req).map(StartGameRequest::difficulty),
             Optional.ofNullable(idemKey));
     var session = service.get(id);
     return ResponseEntity.status(HttpStatus.CREATED)
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("id", id, "state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "id",
+                id,
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @PostMapping("/{id}/input")
@@ -60,7 +71,14 @@ public class GameController {
             : service.apply(id, req.action(), Optional.ofNullable(req.repeat()).orElse(1));
     return ResponseEntity.ok()
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @GetMapping("/{id}/state")
@@ -68,7 +86,14 @@ public class GameController {
     var session = service.get(id);
     return ResponseEntity.ok()
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @DeleteMapping("/{id}")
@@ -112,7 +137,8 @@ public class GameController {
     int height = board.size();
     int width = height == 0 ? 0 : board.get(0).size();
     Map<Integer, String> types = Map.of(0, "EMPTY", 1, "LOCKED");
-    return new GameStateDto(rev, width, height, board, types, cp, false);
+    boolean gameOver = !s.board().canPlace(s.current());
+    return new GameStateDto(rev, width, height, board, types, cp, gameOver);
   }
 
   private static boolean matchesRev(String ifMatch, int rev) {
