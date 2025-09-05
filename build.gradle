@@ -52,14 +52,14 @@ jacocoTestCoverageVerification {
       limit {
         counter = 'LINE'
         value = 'COVEREDRATIO'
-        // Threshold raised after adding tests (80%+ lines locally)
-        minimum = 0.70
+        // Raised after adding tests
+        minimum = 0.80
       }
       limit {
         counter = 'BRANCH'
         value = 'COVEREDRATIO'
-        // Threshold raised after adding tests (~65% branches locally)
-        minimum = 0.60
+        // Raised after adding tests
+        minimum = 0.70
       }
     }
   }
