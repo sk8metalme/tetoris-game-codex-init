@@ -40,7 +40,16 @@ public class GameController {
     var session = service.get(id);
     return ResponseEntity.status(HttpStatus.CREATED)
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("id", id, "state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "id",
+                id,
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @PostMapping("/{id}/input")
@@ -60,7 +69,14 @@ public class GameController {
             : service.apply(id, req.action(), Optional.ofNullable(req.repeat()).orElse(1));
     return ResponseEntity.ok()
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @GetMapping("/{id}/state")
@@ -68,7 +84,14 @@ public class GameController {
     var session = service.get(id);
     return ResponseEntity.ok()
         .header(HttpHeaders.ETAG, String.valueOf(session.rev()))
-        .body(Map.of("state", toDto(session.rev(), session.state())));
+        .body(
+            Map.of(
+                "state",
+                toDto(session.rev(), session.state()),
+                "score",
+                session.score(),
+                "combo",
+                session.combo()));
   }
 
   @DeleteMapping("/{id}")

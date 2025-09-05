@@ -36,7 +36,9 @@ class GameControllerTest {
         .andExpect(jsonPath("$.id", not(isEmptyString())))
         .andExpect(jsonPath("$.state.rev", is(0)))
         .andExpect(jsonPath("$.state.width", is(10)))
-        .andExpect(jsonPath("$.state.height", is(20)));
+        .andExpect(jsonPath("$.state.height", is(20)))
+        .andExpect(jsonPath("$.score", is(0)))
+        .andExpect(jsonPath("$.combo", is(0)));
   }
 
   @Test
@@ -184,14 +186,18 @@ class GameControllerTest {
                 .content(input))
         .andExpect(status().isOk())
         .andExpect(header().string("ETag", anyOf(is("1"), is("\"1\""))))
-        .andExpect(jsonPath("$.state.rev", is(1)));
+        .andExpect(jsonPath("$.state.rev", is(1)))
+        .andExpect(jsonPath("$.score", is(0)))
+        .andExpect(jsonPath("$.combo", is(0)));
 
     // 3) GET state and compare ETag
     mockMvc
         .perform(get("/api/game/{id}/state", id))
         .andExpect(status().isOk())
         .andExpect(header().string("ETag", anyOf(is("1"), is("\"1\""))))
-        .andExpect(jsonPath("$.state.rev", is(1)));
+        .andExpect(jsonPath("$.state.rev", is(1)))
+        .andExpect(jsonPath("$.score", is(0)))
+        .andExpect(jsonPath("$.combo", is(0)));
   }
 
   @Test
