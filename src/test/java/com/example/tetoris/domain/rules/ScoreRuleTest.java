@@ -8,7 +8,6 @@ import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
 class ScoreRuleTest {
-
   @Test
   @DisplayName("LineClearTypeごとの基本スコアを返す（NONE=0, SINGLE=100, DOUBLE=300, TRIPLE=500, TETRIS=800）")
   void lineClearScore_mapping() {
