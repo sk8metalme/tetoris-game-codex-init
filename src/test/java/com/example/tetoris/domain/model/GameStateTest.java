@@ -81,6 +81,30 @@ class GameStateTest {
     assertEquals(expected, new HashSet<>(dropped.current().cells()), "底まで落下しているべき");
   }
 
+  @Test
+  @DisplayName("holdSwap: 現状はNo-Op（MVP段階）")
+  void holdSwap_noop() {
+    Size size = Size.of(10, 20);
+    Board board = GridBoard.empty(size);
+    FakeOffsetPiece piece = FakeOffsetPiece.oBlockAt(5, 0);
+    GameState state = GameState.of(board, piece);
+    GameState after = state.holdSwap();
+    assertEquals(new java.util.HashSet<>(state.current().cells()),
+        new java.util.HashSet<>(after.current().cells()));
+  }
+
+  @Test
+  @DisplayName("tick: 現状はNo-Op（MVP段階）")
+  void tick_noop() {
+    Size size = Size.of(10, 20);
+    Board board = GridBoard.empty(size);
+    FakeOffsetPiece piece = FakeOffsetPiece.oBlockAt(5, 0);
+    GameState state = GameState.of(board, piece);
+    GameState after = state.tick();
+    assertEquals(new java.util.HashSet<>(state.current().cells()),
+        new java.util.HashSet<>(after.current().cells()));
+  }
+
   // テスト専用：原点(0,0)周りのO字形をオフセットで動かす簡易ピース
   static class FakeOffsetPiece implements Piece {
     private final int ox, oy;

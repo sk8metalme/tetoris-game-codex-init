@@ -16,7 +16,7 @@ import java.util.concurrent.ConcurrentHashMap;
 /** メモリ内ゲームセッション管理（MVP）。 - 単純なOブロックをスポーンし、基本操作のみ適用。 */
 public class GameSessionService {
 
-  public record Session(GameState state, int rev) {}
+  public record Session(GameState state, int rev, int score, int combo) {}
 
   private final Map<String, Session> sessions = new ConcurrentHashMap<>();
   private final Map<String, String> startKeyToId = new ConcurrentHashMap<>();
@@ -38,7 +38,7 @@ public class GameSessionService {
     Piece current = oBlockAt(w / 2, 0);
     GameState state = GameState.of(board, current);
     String id = UUID.randomUUID().toString();
-    sessions.put(id, new Session(state, 0));
+    sessions.put(id, new Session(state, 0, 0, 0));
     // 7-bag 生成器を初期化（MVP: シードはtimeベース）
     gens.put(id, com.example.tetoris.domain.random.Generators.sevenBag(System.nanoTime()));
     return id;
@@ -69,6 +69,8 @@ public class GameSessionService {
   public Session apply(String id, String action, int repeat) {
     Session s = get(id);
     GameState st = s.state();
+    int score = s.score();
+    int combo = s.combo();
     for (int i = 0; i < Math.max(1, repeat); i++) {
       st =
           switch (action) {
@@ -78,11 +80,34 @@ public class GameSessionService {
             case "HARD_DROP" -> st.hardDrop();
             case "ROTATE_CW" -> st.rotateCW();
             case "ROTATE_CCW" -> st.rotateCCW();
-            case "LOCK" -> lock(id, st);
+            case "LOCK" -> {
+              var before = st;
+              var res = st.board().placeAndClear(st.current());
+              // スコア計算
+              var rule = new com.example.tetoris.domain.rules.impl.BasicScoreRule();
+              var lc = res.lineClear();
+              if (lc != com.example.tetoris.domain.value.LineClearType.NONE) {
+                score += rule.lineClearScore(lc) + rule.comboBonus(combo);
+                combo += 1;
+              } else {
+                combo = 0;
+              }
+              // 次ミノスポーン（7-bag）
+              com.example.tetoris.domain.random.TetrominoGenerator g = gens.get(id);
+              com.example.tetoris.domain.value.TetrominoType type =
+                  g != null ? g.next() : com.example.tetoris.domain.value.TetrominoType.O;
+              var srs = new com.example.tetoris.domain.rules.srs.SrsRotationSystem();
+              var pos = srs.spawnPosition(before.board().size(), type);
+              var next =
+                  new com.example.tetoris.domain.model.impl.RotatingPiece(
+                      type, com.example.tetoris.domain.value.Rotation.R0, pos.x(), pos.y());
+              st = GameState.of(res.board(), next);
+              yield st;
+            }
             default -> st; // 未対応は無変化
           };
     }
-    Session updated = new Session(st, s.rev() + 1);
+    Session updated = new Session(st, s.rev() + 1, score, combo);
     sessions.put(id, updated);
     return updated;
   }
