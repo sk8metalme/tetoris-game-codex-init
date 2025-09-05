@@ -37,6 +37,26 @@ class SrsKicksCoverageTest {
     assertTrue(cw.contains(new Position(0, 0)) && ccw.contains(new Position(0, 0)));
   }
 
+  @Test
+  @DisplayName("JLTSZ: Tミノの全回転(CW/CCW)でkick表が返る")
+  void jltsz_T_all_from_rotations() {
+    SrsRotationSystem srs = new SrsRotationSystem();
+    Rotation[] rs = {Rotation.R0, Rotation.R90, Rotation.R180, Rotation.R270};
+    for (Rotation from : rs) {
+      assertFalse(srs.kicks(TetrominoType.T, from, nextCW(from)).isEmpty());
+      assertFalse(srs.kicks(TetrominoType.T, from, nextCCW(from)).isEmpty());
+    }
+  }
+
+  @Test
+  @DisplayName("Oミノ: (0,0)のみ（早期return分岐）")
+  void o_piece_has_only_origin() {
+    SrsRotationSystem srs = new SrsRotationSystem();
+    List<Position> k = srs.kicks(TetrominoType.O, Rotation.R0, Rotation.R90);
+    assertEquals(1, k.size());
+    assertEquals(new Position(0, 0), k.get(0));
+  }
+
   private static Rotation nextCW(Rotation r) {
     return switch (r) {
       case R0 -> Rotation.R90;

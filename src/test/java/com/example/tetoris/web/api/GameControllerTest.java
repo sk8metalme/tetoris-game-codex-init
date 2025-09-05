@@ -73,6 +73,52 @@ class GameControllerTest {
   }
 
   @Test
+  @DisplayName("POST /api/game/start: Idempotency-Keyを同一送信で同じIDを返す")
+  void start_idempotent_same_key() throws Exception {
+    String body = "{\"boardWidth\":10,\"boardHeight\":20}";
+    String key = "k-start-1";
+
+    MvcResult r1 =
+        mockMvc
+            .perform(
+                post("/api/game/start")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id1 = om.readTree(r1.getResponse().getContentAsString()).get("id").asText();
+
+    MvcResult r2 =
+        mockMvc
+            .perform(
+                post("/api/game/start")
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id2 = om.readTree(r2.getResponse().getContentAsString()).get("id").asText();
+
+    org.junit.jupiter.api.Assertions.assertEquals(id1, id2);
+  }
+
+  @Test
+  @DisplayName("DELETE → その後のGETは404")
+  void delete_then_get_404() throws Exception {
+    // start
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = om.readTree(r.getResponse().getContentAsString()).get("id").asText();
+
+    mockMvc.perform(delete("/api/game/{id}", id)).andExpect(status().isNoContent());
+    mockMvc.perform(get("/api/game/{id}/state", id)).andExpect(status().isNotFound());
+  }
+
+  @Test
   @DisplayName("POST input: If-Match検証 + HARD_DROPでrevが増加し、GET stateで一致")
   void input_and_get_state() throws Exception {
     // 1) start

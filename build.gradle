@@ -52,14 +52,14 @@ jacocoTestCoverageVerification {
       limit {
         counter = 'LINE'
         value = 'COVEREDRATIO'
-        // Raised after coverage boost
-        minimum = 0.85
+        // Raised after coverage boost v2
+        minimum = 0.90
       }
       limit {
         counter = 'BRANCH'
         value = 'COVEREDRATIO'
-        // Raised after coverage boost
-        minimum = 0.75
+        // Raised after coverage boost v2
+        minimum = 0.80
       }
     }
   }
