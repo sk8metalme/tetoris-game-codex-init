@@ -23,6 +23,7 @@ dependencies {
   implementation 'org.springframework.boot:spring-boot-starter-web'
   implementation 'org.springframework.boot:spring-boot-starter-thymeleaf'
 
+  testImplementation 'org.springframework.boot:spring-boot-starter-test'
   testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
   // Ensure JUnit Platform launcher present on test runtime (CI/Gradle 8+)
   testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
@@ -51,14 +52,14 @@ jacocoTestCoverageVerification {
       limit {
         counter = 'LINE'
         value = 'COVEREDRATIO'
-        // Temporary relaxed threshold to unblock CI; raise incrementally
-        minimum = 0.40
+        // Threshold raised after adding tests (80%+ lines locally)
+        minimum = 0.70
       }
       limit {
         counter = 'BRANCH'
         value = 'COVEREDRATIO'
-        // Temporary relaxed threshold to unblock CI; raise incrementally
-        minimum = 0.35
+        // Threshold raised after adding tests (~65% branches locally)
+        minimum = 0.60
       }
     }
   }
