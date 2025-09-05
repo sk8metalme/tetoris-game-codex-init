@@ -103,4 +103,45 @@ class GameControllerTest {
         .andExpect(header().string("ETag", anyOf(is("1"), is("\"1\""))))
         .andExpect(jsonPath("$.state.rev", is(1)));
   }
+
+  @Test
+  @DisplayName("POST input: 同一Idempotency-Keyで二重送信してもrevが増えない")
+  void input_idempotent_same_key() throws Exception {
+    // start
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+    JsonNode started = om.readTree(r.getResponse().getContentAsString());
+    String id = started.get("id").asText();
+
+    String key = "k-input-1";
+    String input = "{\"action\":\"SOFT_DROP\"}";
+
+    MvcResult r1 =
+        mockMvc
+            .perform(
+                post("/api/game/{id}/input", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content(input))
+            .andExpect(status().isOk())
+            .andReturn();
+    String etag1 = r1.getResponse().getHeader("ETag");
+
+    MvcResult r2 =
+        mockMvc
+            .perform(
+                post("/api/game/{id}/input", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content(input))
+            .andExpect(status().isOk())
+            .andReturn();
+    String etag2 = r2.getResponse().getHeader("ETag");
+
+    // ETag（=rev）は同じ値のはず
+    org.junit.jupiter.api.Assertions.assertEquals(etag1, etag2);
+  }
 }
