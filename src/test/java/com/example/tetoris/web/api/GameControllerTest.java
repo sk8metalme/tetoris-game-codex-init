@@ -93,6 +93,77 @@ class GameControllerTest {
   }
 
   @Test
+  @DisplayName("Idempotency: 同一LOCKを二重送信してもスコア/ETagは変化しない")
+  void idempotent_lock_no_double_scoring() throws Exception {
+    // start with O_ONLY and width=4, height=4
+    String body = "{\"boardWidth\":4,\"boardHeight\":4,\"difficulty\":\"O_ONLY\"}";
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON).content(body))
+            .andExpect(status().isCreated())
+            .andReturn();
+    String id = om.readTree(r.getResponse().getContentAsString()).get("id").asText();
+
+    // 1st O: HARD_DROP → LOCK（左半分）
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"HARD_DROP\"}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"LOCK\"}"))
+        .andExpect(status().isOk());
+
+    // 2nd O: MOVE_RIGHT×2 → HARD_DROP
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"MOVE_RIGHT\",\"repeat\":2}"))
+        .andExpect(status().isOk());
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .content("{\"action\":\"HARD_DROP\"}"))
+        .andExpect(status().isOk());
+
+    // LOCK を Idempotency-Key=K1 で送信 → 応答を記録
+    String key = "K1";
+    MvcResult r1 =
+        mockMvc
+            .perform(
+                post("/api/game/{id}/input", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content("{\"action\":\"LOCK\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+    String etag1 = r1.getResponse().getHeader("ETag");
+    int score1 = om.readTree(r1.getResponse().getContentAsString()).get("score").asInt();
+
+    // 同一キーで再送 → ETag/scoreが変化しない
+    MvcResult r2 =
+        mockMvc
+            .perform(
+                post("/api/game/{id}/input", id)
+                    .contentType(MediaType.APPLICATION_JSON)
+                    .header("Idempotency-Key", key)
+                    .content("{\"action\":\"LOCK\"}"))
+            .andExpect(status().isOk())
+            .andReturn();
+    String etag2 = r2.getResponse().getHeader("ETag");
+    int score2 = om.readTree(r2.getResponse().getContentAsString()).get("score").asInt();
+
+    org.junit.jupiter.api.Assertions.assertEquals(etag1, etag2);
+    org.junit.jupiter.api.Assertions.assertEquals(score1, score2);
+  }
+
+  @Test
   @DisplayName("GET state: 未存在IDは404(GAME_NOT_FOUND)")
   void state_not_found() throws Exception {
     mockMvc
