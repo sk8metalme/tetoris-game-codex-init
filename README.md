@@ -1,11 +1,13 @@
 # Tetris (Java 21 + Spring Boot + Thymeleaf)
 
+[![CI](https://github.com/sk8metalme/tetoris-game-codex-init/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/sk8metalme/tetoris-game-codex-init/actions/workflows/ci.yml)
+
 PCブラウザ向けシングルプレイのテトリス実装（MVP）。オニオンアーキテクチャを採用し、ドメインからTDDで実装を進めています。
 
 ## 要件/スタック
 - Java 21, Gradle
 - Spring Boot 3, Thymeleaf（Web層は今後拡張）
-- テスト: JUnit5 + JaCoCo（目標: line/branch ≥ 95%）
+- テスト: JUnit5 + JaCoCo（段階的に引き上げ: 現在 gate= line ≥ 80%, branch ≥ 70%）
 - コードスタイル: Google Java Style（Spotless）
 
 ## セットアップ
@@ -44,3 +46,11 @@ gradle bootRun
 
 ## ライセンス
 TBD（プロジェクトポリシーに従う）
+
+## CI / Coverage Policy
+- Lint: Spotless（Google Java Format）を必須化。
+- Test: `gradle test` 成功を必須化。レポートは `build/reports/tests/test/index.html`。
+- Coverage: JaCoCo gate（bundle基準）を設定。
+  - 現在: Lines ≥ 80%, Branches ≥ 70%（`build.gradle` の `jacocoTestCoverageVerification`）。
+  - 段階的に引き上げ、最終目標: Lines/Branches ≥ 95%。
+- ドキュメントのみ更新のPRは `detect` ジョブにより build ジョブをスキップ。

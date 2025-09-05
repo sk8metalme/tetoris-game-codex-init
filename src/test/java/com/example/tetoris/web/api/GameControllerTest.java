@@ -40,6 +40,39 @@ class GameControllerTest {
   }
 
   @Test
+  @DisplayName("GET state: 未存在IDは404(GAME_NOT_FOUND)")
+  void state_not_found() throws Exception {
+    mockMvc
+        .perform(get("/api/game/{id}/state", "no-such-id"))
+        .andExpect(status().isNotFound())
+        .andExpect(jsonPath("$.code", is("GAME_NOT_FOUND")));
+  }
+
+  @Test
+  @DisplayName("POST input: If-Match不一致は409(CONFLICT)")
+  void input_conflict_ifmatch_mismatch() throws Exception {
+    // start
+    MvcResult r =
+        mockMvc
+            .perform(post("/api/game/start").contentType(MediaType.APPLICATION_JSON))
+            .andExpect(status().isCreated())
+            .andReturn();
+    JsonNode started = om.readTree(r.getResponse().getContentAsString());
+    String id = started.get("id").asText();
+
+    // wrong If-Match
+    String input = "{\"action\":\"SOFT_DROP\"}";
+    mockMvc
+        .perform(
+            post("/api/game/{id}/input", id)
+                .contentType(MediaType.APPLICATION_JSON)
+                .header("If-Match", "\"999\"")
+                .content(input))
+        .andExpect(status().isConflict())
+        .andExpect(jsonPath("$.code", is("CONFLICT")));
+  }
+
+  @Test
   @DisplayName("POST input: If-Match検証 + HARD_DROPでrevが増加し、GET stateで一致")
   void input_and_get_state() throws Exception {
     // 1) start

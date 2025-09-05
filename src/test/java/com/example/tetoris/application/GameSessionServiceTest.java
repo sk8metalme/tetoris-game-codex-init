@@ -76,6 +76,19 @@ class GameSessionServiceTest {
   }
 
   @Test
+  @DisplayName("apply: 未知アクションは無変化だがrevは+1（default分岐）")
+  void apply_unknown_action_noop() {
+    GameSessionService svc = new GameSessionService();
+    String id = svc.startGame(Optional.empty(), Optional.empty());
+    GameSessionService.Session before = svc.get(id);
+    var cellsBefore = List.copyOf(before.state().current().cells());
+
+    GameSessionService.Session after = svc.apply(id, "UNKNOWN", 1);
+    assertEquals(before.rev() + 1, after.rev());
+    assertEquals(cellsBefore, after.state().current().cells());
+  }
+
+  @Test
   @DisplayName("get: 不正IDはNotFoundException")
   void get_notFound() {
     GameSessionService svc = new GameSessionService();
