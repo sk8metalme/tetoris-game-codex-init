@@ -20,4 +20,3 @@ class ConstantGeneratorTest {
     assertEquals(TetrominoType.T, g2.next());
   }
 }
-
