@@ -43,11 +43,51 @@ public final class GameState {
   }
 
   public GameState rotateCW() {
-    return this; // 後続ステップで実装
+    if (!(current instanceof com.example.tetoris.domain.model.impl.RotatingPiece rp)) return this;
+    com.example.tetoris.domain.rules.srs.SrsRotationSystem srs =
+        new com.example.tetoris.domain.rules.srs.SrsRotationSystem();
+    com.example.tetoris.domain.value.Rotation from = rp.rotation();
+    com.example.tetoris.domain.value.Rotation to =
+        switch (from) {
+          case R0 -> com.example.tetoris.domain.value.Rotation.R90;
+          case R90 -> com.example.tetoris.domain.value.Rotation.R180;
+          case R180 -> com.example.tetoris.domain.value.Rotation.R270;
+          case R270 -> com.example.tetoris.domain.value.Rotation.R0;
+        };
+    var kicks = srs.kicks(rp.type(), from, to);
+    for (var k : kicks) {
+      var candidate =
+          new com.example.tetoris.domain.model.impl.RotatingPiece(
+              rp.type(), to, rp.anchorX() + k.x(), rp.anchorY() + k.y());
+      if (board.canPlace(candidate)) {
+        return new GameState(board, candidate);
+      }
+    }
+    return this;
   }
 
   public GameState rotateCCW() {
-    return this; // 後続ステップで実装
+    if (!(current instanceof com.example.tetoris.domain.model.impl.RotatingPiece rp)) return this;
+    com.example.tetoris.domain.rules.srs.SrsRotationSystem srs =
+        new com.example.tetoris.domain.rules.srs.SrsRotationSystem();
+    com.example.tetoris.domain.value.Rotation from = rp.rotation();
+    com.example.tetoris.domain.value.Rotation to =
+        switch (from) {
+          case R0 -> com.example.tetoris.domain.value.Rotation.R270;
+          case R90 -> com.example.tetoris.domain.value.Rotation.R0;
+          case R180 -> com.example.tetoris.domain.value.Rotation.R90;
+          case R270 -> com.example.tetoris.domain.value.Rotation.R180;
+        };
+    var kicks = srs.kicks(rp.type(), from, to);
+    for (var k : kicks) {
+      var candidate =
+          new com.example.tetoris.domain.model.impl.RotatingPiece(
+              rp.type(), to, rp.anchorX() + k.x(), rp.anchorY() + k.y());
+      if (board.canPlace(candidate)) {
+        return new GameState(board, candidate);
+      }
+    }
+    return this;
   }
 
   public GameState softDrop() {
