@@ -74,6 +74,7 @@ public class GameSessionService {
             case "HARD_DROP" -> st.hardDrop();
             case "ROTATE_CW" -> st.rotateCW();
             case "ROTATE_CCW" -> st.rotateCCW();
+            case "LOCK" -> lock(st);
             default -> st; // 未対応は無変化
           };
     }
@@ -98,17 +99,19 @@ public class GameSessionService {
   }
 
   private static Piece oBlockAt(int x, int y) {
-    // 2x2 O ミノの簡易実装（絶対座標）
-    return new Piece() {
-      @Override
-      public List<Position> cells() {
-        List<Position> list = new ArrayList<>();
-        list.add(new Position(x, y));
-        list.add(new Position(x + 1, y));
-        list.add(new Position(x, y + 1));
-        list.add(new Position(x + 1, y + 1));
-        return list;
-      }
-    };
+    // 2x2 O ミノ（RotatingPiece: Oは全向き同形状）
+    return new com.example.tetoris.domain.model.impl.RotatingPiece(
+        com.example.tetoris.domain.value.TetrominoType.O,
+        com.example.tetoris.domain.value.Rotation.R0,
+        x,
+        y);
+  }
+
+  /** ピースを盤面にロックし、行消去後に新規ピースをスポーンする（MVP: O固定）。 */
+  private GameState lock(GameState st) {
+    Board.PlaceResult res = st.board().placeAndClear(st.current());
+    int w = st.board().size().width();
+    Piece next = oBlockAt(w / 2, 0);
+    return GameState.of(res.board(), next);
   }
 }

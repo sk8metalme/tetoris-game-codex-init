@@ -89,6 +89,32 @@ class GameSessionServiceTest {
   }
 
   @Test
+  @DisplayName("LOCK: hardDrop後にLOCKで盤面に固定され、新規Oがスポーンする")
+  void lock_after_hard_drop_spawns_new_piece_and_fixes_board() {
+    GameSessionService svc = new GameSessionService();
+    String id = svc.startGame(Optional.of(10), Optional.of(20));
+
+    // 1) ハードドロップ（底まで移動）
+    GameSessionService.Session s1 = svc.apply(id, "HARD_DROP", 1);
+    // ドロップ後のピース下段は y=19 のはず（O: 高さ2）
+    int maxY = s1.state().current().cells().stream().mapToInt(Position::y).max().orElse(-1);
+    assertEquals(19, maxY);
+
+    // 2) LOCK で盤面に固定 + 新規スポーン
+    GameSessionService.Session s2 = svc.apply(id, "LOCK", 1);
+    // 新規ピースは上部にスポーン（y=0 を含む）
+    int minYNew = s2.state().current().cells().stream().mapToInt(Position::y).min().orElse(-1);
+    assertEquals(0, minYNew);
+    // 盤面固定セル数は4になる（Oが1つロック）
+    long locked =
+        s2.state().board().occupancy().stream()
+            .flatMap(List::stream)
+            .filter(Boolean::booleanValue)
+            .count();
+    assertEquals(4, locked);
+  }
+
+  @Test
   @DisplayName("apply: repeatが負でも1回として扱われる（Math.max分岐）")
   void apply_negative_repeat_treated_as_one() {
     GameSessionService svc = new GameSessionService();

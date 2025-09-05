@@ -112,7 +112,7 @@ public final class GridBoard implements Board {
 
     GridBoard after = new GridBoard(size, next);
     LineClearType type = toLineClearType(cleared);
-    Board resultBoard = cleared == 0 ? this : after;
+    Board resultBoard = after; // 配置は必ず反映。行消去がなくても after を返す。
 
     return new PlaceResult() {
       @Override
